@@ -10,11 +10,13 @@ PS2X ps2x;
 //motor pwm values
 int percentL = 0;   //percent of left motors
 int percentR = 0;   //from -100 to 100
-int dir = 0;        //int input will determine robot direction
-int pins[] = {6, 8}; //the PWM signal output pins
+//int dir = 0;        //int input will determine robot direction
+int pins[] = {6, 9}; //the PWM signal output pins
 
 const int arraySize = sizeof(pins)/sizeof(int);
 Servo controllers[arraySize];
+Servo flip;         //flipper servo
+int flip_pos = 0;   //flipper position
 
 //controller values
 int error = 0; 
@@ -78,10 +80,10 @@ if(type == 2){      //guitar hero controler
 }
 else { //DualShock Controller
   ps2x.read_gamepad(false, vibrate);          //read controller and set large motor to spin at 'vibrate' speed
-  if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
+  /*if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
     Serial.println("Start is being held");
   if(ps2x.Button(PSB_SELECT))
-    Serial.println("Select is being held");
+    Serial.println("Select is being held");*/
   if(ps2x.Button(PSB_PAD_UP))                 //will be TRUE as long as button is pressed 
   {         
     Serial.print("Up held this hard: ");
