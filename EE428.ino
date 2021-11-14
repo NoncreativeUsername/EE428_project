@@ -11,7 +11,7 @@ PS2X ps2x;
 int percentL = 0;   //percent of left motors
 int percentR = 0;   //from -100 to 100
 int dir = 0;        //int input will determine robot direction
-int pins[] = {6, 8, 10 ,12}; //the PWM signal output pins
+int pins[] = {6, 8}; //the PWM signal output pins
 
 const int arraySize = sizeof(pins)/sizeof(int);
 Servo controllers[arraySize];
@@ -57,6 +57,13 @@ void setup(){
 }
 
 void loop(){
+  int PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
+  int PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
+
+  //write PWM value to data pins
+  controllers[0].writeMicroseconds(PWMvalueR);
+  controllers[1].writeMicroseconds(PWMvalueR);
+  
   /* You must Read Gamepad to get new values
   Read GamePad and set vibration values
   ps2x.read_gamepad(small motor on/off, larger motor strenght from 0-255)
