@@ -22,6 +22,8 @@ float angle_adj;     // angle of adjustment required to be perpendicular to wall
 float medianR;
 float medianL;
 
+bool auto_start = false;    //start autonomous stuff
+
 // Create a new instance of the SharpIR class:
 SharpIR IrRSensor = SharpIR(IRPinR, model);
 SharpIR IrLSensor = SharpIR(IRPinL, model);
@@ -34,7 +36,7 @@ PS2X ps2x;
 int percentL = 0;   //percent of left motors
 int percentR = 0;   //from -100 to 100
 //int dir = 0;        //int input will determine robot direction
-int pins[] = {6, 8}; //the PWM signal output pins
+int pins[] = {6, 9}; //the PWM signal output pins
 
 const int arraySize = sizeof(pins)/sizeof(int);
 Servo controllers[arraySize];
@@ -81,12 +83,34 @@ void loop() {
   sensorDist = 4.5; // inches between IR sensor
 
   // for loop for finding the medians of the IR data sets
-  for (int i = 0; i < ws+1; i++){
+  for (int i = 0; i < ws+1; i++)
+  {
     MedianFilter2<float> medianFilter2(ws);
 
-  // Get a distance measurement and store it as distance_cm:
-  distanceR_cm = IrRSensor.distance();
-  
+    // Get a distance measurement and store it as distance_cm:
+    distanceR_cm = IrRSensor.getDistance();
+    distanceL_cm = IrLSensor.getDistance();
+
+    medianL = medianFilter2.AddValue(distanceL_cm); 
+    medianR = medianFilter2.AddValue(distanceR_cm); 
+  }
+
+  angle_adj = atan((medianR/2.54 - medianL/2.54)/sensorDist)/pie*180; // find the angle of adjustment. converts cm to Inches before calculation, 
+
+  if (auto_start)   //start autonomous stuff
+  {
+    auto_func(auto_start);
+  }
+  else              //wait for start autonomous stuff command from controller
+  {
+    ps2x.read_gamepad();
+    if(ps2x.Button(PSB_START))        //will be TRUE as long as button is pressed
+    {
+      Serial.println("Start is being held");
+      auto_start = true;               //start autonomous stuff
+    }
+      
+  }
   int PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
   int PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
 
@@ -95,4 +119,14 @@ void loop() {
   controllers[1].writeMicroseconds(PWMvalueR);
   
   delay(50);
+}
+
+bool auto_func(bool x)        //auto function of the robot will be triggered by controller
+{
+  if (x)
+  {
+    return true;          //return true when fucntion not finished
+  }
+  else
+    return false;         //return false when finsihed then wait to be triggered again
 }
