@@ -75,22 +75,21 @@ if(error == 1)
 //DualShock Controller
   ps2x.read_gamepad();          //read controller
   if (ps2x.Button(PSB_R2))      //right trigger
-  {
     percentR = 10;
-  }
+  
+  else
+    percentR = 0;
+    
   if (ps2x.Button(PSB_L2))      //left trigger
-  {
     percentL = 10; 
-  }
+
+  else
+    percentL = 0;
 
   if (ps2x.Button(PSB_BLUE))            //activate flipper when button is pressed
-  {
     flip_pos = 45;
-  }
   else
-  {
     flip_pos = 0;
-  }
 
   flip.write(flip_pos);         //write flipper angle
 
