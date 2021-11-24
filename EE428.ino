@@ -154,8 +154,8 @@ int PWMvalueR = 1500;
 Servo motorR, motorL;
 
 void setup(){
-  //servo1.attach(9, 500, 2500);    //flipper servo
-
+  servo1.attach(9, 500, 2500);    //flipper servo
+  servo1.write(90);
   motorR.attach(3); //associate the right to a pin
   motorL.attach(5); //associate the left to a pin
   
@@ -212,7 +212,18 @@ void loop () {
       haveController = false;
     } else {
       fastDigitalWrite (PIN_BUTTONPRESS, !!psx.getButtonWord ());
-      dumpButtons (psx.getButtonWord ());
+      //dumpButtons (psx.getButtonWord ());
+      Serial.println(psx.getButtonWord());
+      if (psx.getButtonWord() == 512)
+      {
+        servo1.write(0);
+        Serial.println("on");
+      }
+      else
+      {
+        servo1.write(90);
+        Serial.println("off");
+      }
     }
   }
 
@@ -231,12 +242,12 @@ void loop () {
   //scale values to pwm values
   PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
   PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
-  
+  /*
   Serial.print("left: ");
   Serial.println(PWMvalueL);
   Serial.print("right: ");
   Serial.println(PWMvalueR);
-  
+  */
   //write PWM value to motor pins
   motorR.writeMicroseconds(PWMvalueR);
   motorL.writeMicroseconds(PWMvalueL);
