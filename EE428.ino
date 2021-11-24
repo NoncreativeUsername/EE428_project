@@ -2,10 +2,9 @@
 #include <DigitalIO.h>
 #include <PsxControllerBitBang.h>
 #include <avr/pgmspace.h>
-
+#include <avr/pgmspace.h>
 
 //start controller stuff
-#include <avr/pgmspace.h>
 typedef const __FlashStringHelper * FlashStr;
 typedef const byte* PGM_BYTES_P;
 #define PSTR_TO_F(s) reinterpret_cast<const __FlashStringHelper *> (s)
@@ -115,7 +114,6 @@ void dumpAnalog (const char *str, const byte x, const byte y) {
 }
 
 
-
 const char ctrlTypeUnknown[] PROGMEM = "Unknown";
 const char ctrlTypeDualShock[] PROGMEM = "Dual Shock";
 const char ctrlTypeDsWireless[] PROGMEM = "Dual Shock Wireless";
@@ -126,7 +124,6 @@ const char* const controllerTypeStrings[PSCTRL_MAX + 1] PROGMEM = {
   ctrlTypeUnknown,
   ctrlTypeDualShock,
   ctrlTypeDsWireless,
-  ctrlTypeGuitHero,
   ctrlTypeOutOfBounds
 };
 
@@ -139,7 +136,6 @@ boolean haveController = false;
 //start servo stuff
 Servo servo1;   //create servo
 
-const int servo1Pin = 9;  // servo1 接 Pin 9
 const int every1 = 15;
 int servo1Target = 0;
 
@@ -151,22 +147,17 @@ int posOfServo1 = 90;   //intial servo position
 //start motor stuff
 int percentL = 0;   //percent of left motors
 int percentR = 0;   //from -100 to 100
-int pins[] = {5, 3}; //the PWM signal output pins
 
-//const int arraySize = sizeof(pins)/sizeof(int);
+int PWMvalueL = 1500;
+int PWMvalueR = 1500;
+
 Servo motorR, motorL;
 
 void setup(){
-  pinMode(5, OUTPUT);     //left motor
-  pinMode(3, OUTPUT);     //right motor
+  //servo1.attach(9, 500, 2500);    //flipper servo
 
-  servo1.attach(servo1Pin, 500, 2500);    //attach servo on pin 9
-
-  //for (int i=0; i<arraySize; i++)
-    //controllers[i].attach(pins[i]); //associate the object to a pin
-
-  motorL.attach(6); //associate the left to a pin
   motorR.attach(3); //associate the right to a pin
+  motorL.attach(5); //associate the left to a pin
   
   fastPinMode (PIN_BUTTONPRESS, OUTPUT);
   fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
@@ -175,13 +166,10 @@ void setup(){
 
   Serial.begin (115200);
   Serial.println (F("Ready!"));
-
-
 }
 
  
 void loop () {
-  static byte slx, sly, srx, sry;
   
   fastDigitalWrite (PIN_HAVECONTROLLER, haveController);
 
@@ -225,23 +213,6 @@ void loop () {
     } else {
       fastDigitalWrite (PIN_BUTTONPRESS, !!psx.getButtonWord ());
       dumpButtons (psx.getButtonWord ());
-      /*
-      byte lx, ly;
-      psx.getLeftAnalog (lx, ly);
-      if (lx != slx || ly != sly) {
-        dumpAnalog ("Left", lx, ly);
-        slx = lx;
-        sly = ly;
-      }
-
-      byte rx, ry;
-      psx.getRightAnalog (rx, ry);
-      if (rx != srx || ry != sry) {
-        dumpAnalog ("Right", rx, ry);
-        srx = rx;
-        sry = ry;
-      }
-      */
     }
   }
 
@@ -254,16 +225,21 @@ void loop () {
   psx.getRightAnalog(rx, ry);
 
   //scale stick y values to motor percent
-  percentR = -(ry - 128)*0.1;
-  percentL = -(ly - 128)*0.1;
+  percentR = -(ry - 128)*0.15;
+  percentL = (ly - 128)*0.15;
 
   //scale values to pwm values
-  int PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
-  int PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
-
+  PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
+  PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
+  
+  Serial.print("left: ");
+  Serial.println(PWMvalueL);
+  Serial.print("right: ");
+  Serial.println(PWMvalueR);
+  
   //write PWM value to motor pins
-  motorL.writeMicroseconds(PWMvalueR);
-  motorR.writeMicroseconds(PWMvalueL);
+  motorR.writeMicroseconds(PWMvalueR);
+  motorL.writeMicroseconds(PWMvalueL);
   
   delay (1000 / 60);
-} 
+}
