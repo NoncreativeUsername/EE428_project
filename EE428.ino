@@ -1,4 +1,3 @@
-#include <PS2X_lib.h>
 #include <Servo.h>
 #include <SharpIR.h>
 #include <Math.h>
@@ -7,82 +6,60 @@
 // Define model and input pin:
 #define IRPinR A0
 #define IRPinL A5
+#define IRPinM A4
 #define model 430
 
 // Create variable to store the distance:
 float distanceR_cm;  // distance on left sensor
-float distanceL_cm;  // destance on right sensor
+float distanceL_cm;  // distance on right sensor
+float distanceM_cm;  // distance on middle sensor
 
 float pie = 3.1415926535897932384626433832795;
 float sensorDist; // distance between sensors
 
-float angle_wall;    // angle with wall
-float angle_adj;     // angle of adjustment required to be perpendicular to wall
+float angle_wall;     // angle with wall
+float angle_adj;      // angle of adjustment required to be perpendicular to wall
 
-float medianR;
-float medianL;
+float medianR;        //right
+float medianL;        //left
+float medianM;        //middle
 
-bool auto_start = false;    //start autonomous stuff
+byte percentL = 0;   //percent of left motors
+byte percentR = 0;   //from -100 to 100
+
+int PWMvalueL = 1500;
+int PWMvalueR = 1500;
+
+//direction to get closer to target
+bool forward = false;
+bool right = false;
+bool left = false;
 
 // Create a new instance of the SharpIR class:
 SharpIR IrRSensor = SharpIR(IRPinR, model);
 SharpIR IrLSensor = SharpIR(IRPinL, model);
+SharpIR IrMSensor = SharpIR(IRPinM, model);
 
 int ws = 200;  // window size for the median finder
 
-PS2X ps2x;
-
-//motor pwm values
-int percentL = 0;   //percent of left motors
-int percentR = 0;   //from -100 to 100
-//int dir = 0;        //int input will determine robot direction
-int pins[] = {6, 9}; //the PWM signal output pins
-
-const int arraySize = sizeof(pins)/sizeof(int);
-Servo controllers[arraySize];
-
-//controller values
-int error = 0; 
-byte type = 0;
-byte vibrate = 0;
+Servo servo1, motorR, motorL;
 
 void setup() {
-  Serial.begin(9600);
-  
-  for (int i=0; i<arraySize; i++)
-    controllers[i].attach(pins[i]); //associate the object to a pin
-  error = ps2x.config_gamepad(13,11,10,12, true, true);   //GamePad(clock, command, attention, data, Pressures?, Rumble?) 
-  if(error == 0){
-    Serial.println("Found Controller, configured successful");
-    Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
-    Serial.println("holding L1 or R1 will print out the analog stick values.");
-    //Serial.println("Go to www.billporter.info for updates and to report bugs.");
-  }
-  else if(error == 1)
-    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
-  else if(error == 2)
-    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
-  else if(error == 3)
-    Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
-  type = ps2x.readType(); 
-    switch(type) {
-      case 0:
-       Serial.println("Unknown Controller type");
-      break;
-      case 1:
-       Serial.println("DualShock Controller Found");
-      break;
-      case 2:
-        Serial.println("GuitarHero Controller Found");
-      break;
-    }
-    delay(500);
+  servo1.attach(9, 500, 2500);    //flipper servo
+  servo1.write(90);
+  motorR.attach(3); //associate the right to a pin
+  motorL.attach(5); //associate the left to a pin
+
+  Serial.begin (115200);
+  Serial.println (F("Ready!"));
 }
 
 void loop() {
+  
   sensorDist = 4.5; // inches between IR sensor
 
   // for loop for finding the medians of the IR data sets
+  //smoothes out random outliers
   for (int i = 0; i < ws+1; i++)
   {
     MedianFilter2<float> medianFilter2(ws);
@@ -90,43 +67,41 @@ void loop() {
     // Get a distance measurement and store it as distance_cm:
     distanceR_cm = IrRSensor.getDistance();
     distanceL_cm = IrLSensor.getDistance();
+    distanceM_cm = IrMSensor.getDistance();
 
     medianL = medianFilter2.AddValue(distanceL_cm); 
     medianR = medianFilter2.AddValue(distanceR_cm); 
+    medianM = medianFilter2.AddValue(distanceM_cm);
   }
 
-  angle_adj = atan((medianR/2.54 - medianL/2.54)/sensorDist)/pie*180; // find the angle of adjustment. converts cm to Inches before calculation, 
+  //may not need this, keep just in case
+  //angle_adj = atan((medianR/2.54 - medianL/2.54)/sensorDist)/pie*180; // find the angle of adjustment. converts cm to Inches before calculation, 
 
-  if (auto_start)   //start autonomous stuff
-  {
-    auto_func(auto_start);
-  }
-  else              //wait for start autonomous stuff command from controller
-  {
-    ps2x.read_gamepad();
-    if(ps2x.Button(PSB_START))        //will be TRUE as long as button is pressed
-    {
-      Serial.println("Start is being held");
-      auto_start = true;               //start autonomous stuff
-    }
-      
-  }
-  int PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
-  int PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
+  
+  
+  if (!forward and !left and !right)    //no targets in range
+    seek_target();                      //find new target
+  else
+    follow();
 
-  //write PWM value to data pins
-  controllers[0].writeMicroseconds(PWMvalueR);
-  controllers[1].writeMicroseconds(PWMvalueR);
   
   delay(50);
 }
 
-bool auto_func(bool x)        //auto function of the robot will be triggered by controller
+void seek_target()    //find something to follow
 {
-  if (x)
-  {
-    return true;          //return true when fucntion not finished
-  }
-  else
-    return false;         //return false when finsihed then wait to be triggered again
+  //spin to the right slowly
+  motorR.writeMicroseconds(1475);   //motors are reversed from each other
+  motorL.writeMicroseconds(1475);   //each motor 5%
+}
+
+void follow()         //follow your target
+{
+  //scale motor % to a motor PWM value
+  PWMvalueL = percentL * 5 + 1500; //scale up to 1000-2000
+  PWMvalueR = percentR * 5 + 1500; //scale up to 1000-2000
+
+  //write PWM value to data pins
+  motorR.writeMicroseconds(PWMvalueR);
+  motorL.writeMicroseconds(PWMvalueL);
 }
