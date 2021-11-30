@@ -12,6 +12,10 @@ float medianR;        //right
 float medianL;        //left
 float medianM;        //middle
 
+String direction_prime = "hold";
+String direction_1 = "hold";
+String direction_2 = "hold";
+String direction_3 = "hold";
 
 int PWMvalueL = 1500;
 int PWMvalueR = 1500;
@@ -87,32 +91,63 @@ void loop() {
 
   if (medianM > 250)     //object to close stop
   {
+    direction_1 = "hold";
+  }
+  else if (medianM > 120)     //object to far, follow
+  {
+    direction_1 = "forward";
+  }
+  else if (medianL > 100)    //object to the left, turn
+  {
+    direction_1 = "left";
+  }
+  else if (medianR > 100)    //object to the right, turn
+  {
+    direction_1 = "right";
+  }
+  else                      //object lost, search
+  {
+    direction_1 = "spin";
+  }
+
+  //direction must be the same 3 times in a row before being changed
+  if ((direction_1 == direction_2) and (direction_2 == direction_3))
+  {
+    direction_prime = direction_1;
+  }
+
+  //kind of a shift register
+  direction_3 = direction_2;
+  direction_2 = direction_1;
+  
+  if (direction_prime == "hold")     //object to close stop
+  {
     Serial.println("hold");
     motorR.writeMicroseconds(1500);
     motorL.writeMicroseconds(1500);
   }
-  else if (medianM > 120)     //object to far, follow
+  else if (direction_prime == "forward")     //object to far, follow
   {
     Serial.println("forward");
-    motorR.writeMicroseconds(1475);
-    motorL.writeMicroseconds(1525);
+    motorR.writeMicroseconds(1535);
+    motorL.writeMicroseconds(1465);
   }
-  else if (medianL > 100)    //object to the left, turn
+  else if (direction_prime == "left")    //object to the left, turn
   {
     Serial.println("turn left");
-    motorR.writeMicroseconds(1525);
-    motorL.writeMicroseconds(1525);
+    motorR.writeMicroseconds(1535);
+    motorL.writeMicroseconds(1535);
     /*use this if you need to slow it down
     delay(50);
     motorR.writeMicroseconds(1500);
     motorL.writeMicroseconds(1500);
     */
   }
-  else if (medianR > 100)    //object to the right, turn
+  else if (direction_prime == "right")    //object to the right, turn
   {
     Serial.println("turn right");
-    motorR.writeMicroseconds(1475);
-    motorL.writeMicroseconds(1475);
+    motorR.writeMicroseconds(1465);
+    motorL.writeMicroseconds(1465);
     /*
     delay(50);
     motorR.writeMicroseconds(1500);
@@ -124,7 +159,6 @@ void loop() {
     motorR.writeMicroseconds(1475);
     motorL.writeMicroseconds(1475);
   }
-
 
   delay(50);    //unsure if delay is necessary
 }
