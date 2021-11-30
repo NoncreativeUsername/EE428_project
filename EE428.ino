@@ -1,4 +1,3 @@
-
 #include <Servo.h>
 #include <SharpIR.h>
 #include <Math.h>
@@ -43,50 +42,64 @@ void loop() {
 
   // for loop for finding the medians of the IR data sets
   //smoothes out random outliers
-  /*
+  
   for (int i = 0; i < ws+1; i++)
   {
     MedianFilter2<float> medianFilter2(ws);
 
     // Get a distance measurement and store it as distance_cm:
-    value1 = analogRead(A0);  //right
-    value2 = analogRead(A1);  //center
     value3 = analogRead(A2);  //left
-    //distanceR_cm = IrRSensor.getDistance();
-    //distanceL_cm = IrLSensor.getDistance();
-    //distanceM_cm = IrMSensor.getDistance();
 
-    medianL = medianFilter2.AddValue(value3); 
+    medianL = medianFilter2.AddValue(value3);
+  }
+
+    for (int i = 0; i < ws+1; i++)
+  {
+    MedianFilter2<float> medianFilter2(ws);
+
+    // Get a distance measurement and store it as distance_cm:
+    value1 = analogRead(A0);  //right
+
     medianR = medianFilter2.AddValue(value1); 
-    medianM = medianFilter2.AddValue(value2);
-  }*/
+  }
 
-  //may not need this, keep just in case
-  //angle_adj = atan((medianR/2.54 - medianL/2.54)/sensorDist)/pie*180; // find the angle of adjustment. converts cm to Inches before calculation,
-  value1 = analogRead(A0);  //right
-  value2 = analogRead(A1);  //center
-  value3 = analogRead(A2);  //left
+    for (int i = 0; i < ws+1; i++)
+  {
+    MedianFilter2<float> medianFilter2(ws);
+
+    // Get a distance measurement and store it as distance_cm:
+    value2 = analogRead(A1);  //center
+ 
+    medianM = medianFilter2.AddValue(value2);
+  }
+  
+  //value1 = analogRead(A0);  //right
+  //value2 = analogRead(A1);  //center
+  //value3 = analogRead(A2);  //left
   Serial.print("R: ");
-  Serial.print(value1);
+  Serial.print(medianR);
   //value1 = analogRead(A0)*0.0048828125;
   //distanceM_cm = 13*pow(value, -1);
   Serial.print("  C: ");
-  Serial.print(value2);
+  Serial.print(medianM);
   Serial.print("  L: ");
-  Serial.println(value3);
+  Serial.println(medianL);
 
-  if (value2 > 120)     //object to close stop
+  if (medianM > 250)     //object to close stop
   {
+    Serial.println("hold");
     motorR.writeMicroseconds(1500);
     motorL.writeMicroseconds(1500);
   }
-  else if (value2 > 40)     //object to far, follow
+  else if (medianM > 120)     //object to far, follow
   {
+    Serial.println("forward");
     motorR.writeMicroseconds(1475);
     motorL.writeMicroseconds(1525);
   }
-  else if (value3 > 120)    //object to the left, turn
+  else if (medianL > 100)    //object to the left, turn
   {
+    Serial.println("turn left");
     motorR.writeMicroseconds(1525);
     motorL.writeMicroseconds(1525);
     /*use this if you need to slow it down
@@ -95,8 +108,9 @@ void loop() {
     motorL.writeMicroseconds(1500);
     */
   }
-  else if (value2 > 120)    //object to the right, turn
+  else if (medianR > 100)    //object to the right, turn
   {
+    Serial.println("turn right");
     motorR.writeMicroseconds(1475);
     motorL.writeMicroseconds(1475);
     /*
@@ -106,6 +120,7 @@ void loop() {
   }
   else                      //object lost, search
   {
+    Serial.println("spin");
     motorR.writeMicroseconds(1475);
     motorL.writeMicroseconds(1475);
   }
