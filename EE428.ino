@@ -123,20 +123,20 @@ void loop() {
   if (direction_prime == "hold")     //object to close stop
   {
     Serial.println("hold");
-    motorR.writeMicroseconds(1500);
-    motorL.writeMicroseconds(1500);
+    PWMvalueR = 1500;
+    PWMvalueL = 1500;
   }
   else if (direction_prime == "forward")     //object to far, follow
   {
     Serial.println("forward");
-    motorR.writeMicroseconds(1535);
-    motorL.writeMicroseconds(1465);
+    PWMvalueR = 1535;
+    PWMvalueL = 1465;
   }
   else if (direction_prime == "left")    //object to the left, turn
   {
     Serial.println("turn left");
-    motorR.writeMicroseconds(1535);
-    motorL.writeMicroseconds(1535);
+    PWMvalueR = 1535;
+    PWMvalueL = 1535;
     /*use this if you need to slow it down
     delay(50);
     motorR.writeMicroseconds(1500);
@@ -146,8 +146,8 @@ void loop() {
   else if (direction_prime == "right")    //object to the right, turn
   {
     Serial.println("turn right");
-    motorR.writeMicroseconds(1465);
-    motorL.writeMicroseconds(1465);
+    PWMvalueR = 1465;
+    PWMvalueL = 1465;
     /*
     delay(50);
     motorR.writeMicroseconds(1500);
@@ -156,9 +156,16 @@ void loop() {
   else                      //object lost, search
   {
     Serial.println("spin");
-    motorR.writeMicroseconds(1475);
-    motorL.writeMicroseconds(1475);
+    PWMvalueR = 1475;
+    PWMvalueL = 1475;
   }
+
+  //try to stop random jumps in motor speed
+  PWMvalueR = constrain(PWMvalueR, 1450, 1550);
+  PWMvalueL = constrain(PWMvalueL, 1450, 1550);
+
+  motorR.writeMicroseconds(PWMvalueR);
+  motorL.writeMicroseconds(PWMvalueL);
 
   delay(50);    //unsure if delay is necessary
 }
