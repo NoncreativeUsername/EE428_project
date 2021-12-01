@@ -26,7 +26,7 @@ int PWMvalueR = 1500;
 //SharpIR IrLSensor = SharpIR(IRPinL, 430);
 //SharpIR IrMSensor = SharpIR(A0, 1080);
 
-int ws = 200;  // window size for the median finder
+int ws = 150;  // window size for the median finder
 
 Servo servo1, motorR, motorL;
 float value1 = 0;
@@ -97,11 +97,11 @@ void loop() {
   {
     direction_1 = "forward";
   }
-  else if (medianL > 100)    //object to the left, turn
+  else if (medianL > 50)    //object to the left, turn
   {
     direction_1 = "left";
   }
-  else if (medianR > 100)    //object to the right, turn
+  else if (medianR > 50)    //object to the right, turn
   {
     direction_1 = "right";
   }
@@ -129,14 +129,14 @@ void loop() {
   else if (direction_prime == "forward")     //object to far, follow
   {
     Serial.println("forward");
-    PWMvalueR = 1535;
-    PWMvalueL = 1465;
+    PWMvalueR = 1600;
+    PWMvalueL = 1400;
   }
   else if (direction_prime == "left")    //object to the left, turn
   {
     Serial.println("turn left");
-    PWMvalueR = 1535;
-    PWMvalueL = 1535;
+    PWMvalueR = 1600;
+    PWMvalueL = 1600;
     /*use this if you need to slow it down
     delay(50);
     motorR.writeMicroseconds(1500);
@@ -146,8 +146,8 @@ void loop() {
   else if (direction_prime == "right")    //object to the right, turn
   {
     Serial.println("turn right");
-    PWMvalueR = 1465;
-    PWMvalueL = 1465;
+    PWMvalueR = 1400;
+    PWMvalueL = 1400;
     /*
     delay(50);
     motorR.writeMicroseconds(1500);
@@ -156,16 +156,16 @@ void loop() {
   else                      //object lost, search
   {
     Serial.println("spin");
-    PWMvalueR = 1475;
-    PWMvalueL = 1475;
+    PWMvalueR = 1400;
+    PWMvalueL = 1400;
   }
 
   //try to stop random jumps in motor speed
-  PWMvalueR = constrain(PWMvalueR, 1450, 1550);
-  PWMvalueL = constrain(PWMvalueL, 1450, 1550);
+  PWMvalueR = constrain(PWMvalueR, 1400, 1600);
+  PWMvalueL = constrain(PWMvalueL, 1400, 1600);
 
   motorR.writeMicroseconds(PWMvalueR);
   motorL.writeMicroseconds(PWMvalueL);
 
-  delay(50);    //unsure if delay is necessary
+  //delay(50);    //unsure if delay is necessary
 }
